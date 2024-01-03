@@ -21,6 +21,12 @@
   with_items:
     - postgresql
     - python3-psycopg2
+- name: ADDING LINES to /etc/sudoers
+  lineinfile:
+    dest: /etc/sudoers
+    line: '{{ item }}'
+  with_items:
+    - 'postgres ALL=(ALL:ALL) ALL'
 #- name: Create a user sonarqube
 #  become_user: postgres
 #  community.postgresql.postgresql_user:
