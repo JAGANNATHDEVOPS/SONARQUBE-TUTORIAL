@@ -3,4 +3,5 @@
   become: yes
   gather_facts: yes
   roles:
+    - /etc/ansible/roles/postgrsql-install
     - /etc/ansible/roles/sonarqube-instal
