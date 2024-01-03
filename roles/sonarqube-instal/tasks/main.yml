@@ -1,0 +1,113 @@
+---
+# tasks file for sonarqube-instal
+- name: Create SonarQube user
+  user:
+    name: sonarqube
+      #group: sonarqube  # You can set the primary group if needed
+      #home: /opt/sonarqube
+      #shell: /bin/bash
+  become: yes
+- name: Installing the java version8
+  apt:
+    name: openjdk-17-jdk
+- name: ADDING LINES to /etc/sysctl.conf
+  lineinfile:
+    dest: /etc/sysctl.conf
+    line: '{{ item }}'
+  with_items:
+    - 'vm.max_map_count=524288'
+    - 'fs.file-max=131072'
+- name: Reload the system changes
+  shell:
+    sudo sysctl --system
+- name: INSTALLING REQUIRED PACKAGES
+  apt:
+    name: '{{ item }}'
+    state: present
+  with_items:
+    - unzip
+    - software-properties-common
+    - wget
+- name: Download sonarqube
+  get_url:
+    url: https://binaries.sonarsource.com/Distribution/sonarqube/sonarqube-10.3.0.82913.zip
+    dest: /opt
+- name: Unarchive a file sonarqube-10.3.0.82913.zip
+  unarchive:
+    src: /opt/sonarqube-10.3.0.82913.zip
+    dest: /opt
+- name: Rename sonarqube-10.3.0.82913 as sonarqube
+  command: mv /opt/sonarqube-10.3.0.82913 /opt/sonarqube
+- name: Change file ownership, group and permissions of /opt/sonarqube
+  file:
+    path: /opt/sonarqube/
+    state: directory
+    recurse: yes
+    owner: sonarqube
+    group: sonarqube
+- name: Replace line in file /opt/sonarqube/conf/sonar.properties
+  lineinfile:
+    path: /opt/sonarqube/conf/sonar.properties
+    regex: '^(.*)#sonar.jdbc.username=(.*)$'
+    line: 'sonar.jdbc.username=sonarqube'
+    backrefs: yes
+- name: Replace line in file /opt/sonarqube/conf/sonar.properties
+  lineinfile:
+    path: /opt/sonarqube/conf/sonar.properties
+    regex: '^(.*)#sonar.jdbc.password=(.*)$'
+    line: 'sonar.jdbc.password=sonarqube'
+    backrefs: yes
+- name: Replace line in file /opt/sonarqube/conf/sonar.properties
+  lineinfile:
+    path: /opt/sonarqube/conf/sonar.properties
+    regex: '^(.*)#sonar.jdbc.url=jdbc:postgresql://localhost/sonarqube?(.*)$'
+    line: 'sonar.jdbc.url=jdbc:postgresql://localhost:5432/sonarqube'
+    backrefs: yes
+- name: Replace line in file /opt/sonarqube/conf/sonar.properties
+  lineinfile:
+    path: /opt/sonarqube/conf/sonar.properties
+    regex: '^(.*)#sonar.web.host(.*)$'
+    line: 'sonar.web.host=0.0.0.0'
+    backrefs: yes
+- name: Replace line in file /opt/sonarqube/conf/sonar.properties
+  lineinfile:
+    path: /opt/sonarqube/conf/sonar.properties
+    regex: '^(.*)#sonar.web.port=9000(.*)$'
+    line: 'sonar.web.port=9000'
+    backrefs: yes
+- name: Replace line in file /opt/sonarqube/conf/sonar.properties
+  lineinfile:
+    path: /opt/sonarqube/conf/sonar.properties
+    regex: '^(.*)#sonar.search.javaOpts=-Xmx512m -Xms512m -XX:MaxDirectMemorySize=256m -XX:+HeapDumpOnOutOfMemoryError(.*)$'
+    line: 'sonar.search.javaOpts=-Xmx512m -Xms512m -XX:MaxDirectMemorySize=256m -XX:+HeapDumpOnOutOfMemoryError'
+    backrefs: yes
+- name: Replace line in file /opt/sonarqube/conf/sonar.properties
+  lineinfile:
+    path: /opt/sonarqube/conf/sonar.properties
+    regex: '^(.*)#sonar.log.level=INFO(.*)$'
+    line: 'sonar.log.level=INFO'
+    backrefs: yes
+- name: Replace line in file /opt/sonarqube/conf/sonar.properties
+  lineinfile:
+    path: /opt/sonarqube/conf/sonar.properties
+    regex: '^(.*)#sonar.web.javaAdditionalOpts=-server(.*)$'
+    line: 'sonar.web.javaAdditionalOpts=-server'
+    backrefs: yes
+- name: Replace line in file /opt/sonarqube/conf/sonar.properties
+  lineinfile:
+    path: /opt/sonarqube/conf/sonar.properties
+    regex: '^(.*)#sonar.path.logs=logs(.*)$'
+    line: 'sonar.path.logs=logs'
+    backrefs: yes
+- name: Add sonarqube.service
+  template:
+   src: sonarqube.service
+   dest: /etc/systemd/system/sonarqube.service
+- name: Just force systemd to reread configs (2.4 and above)
+  systemd_service:
+    daemon_reload: true
+- name: Start sonarqube
+  service:
+   name: sonarqube
+   state: started
+   enabled: yes

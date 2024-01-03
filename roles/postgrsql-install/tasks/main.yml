@@ -1,0 +1,46 @@
+---
+# tasks file for postgrsql-install
+- name: Update all packages to their latest version
+  apt:
+    update_cache: yes
+    force_apt_get: yes
+- name: get apt repo key
+  apt_key:
+    url: '{{ public_signing_key  }}'
+    state: present
+- name: Add POSTGRESQL repository
+  apt_repository:
+    repo: '{{ postgresql_repo }}'
+- name: Update all packages to their latest version
+  apt:
+    update_cache: yes
+    force_apt_get: yes
+- name: INSTALLING REQUIRED PACKAGES
+  apt:
+    pkg: '{{ item }}'
+  with_items:
+    - postgresql
+    - python3-psycopg2
+#- name: Create a user sonarqube
+#  become_user: postgres
+#  community.postgresql.postgresql_user:
+#    name: sonarqube
+#    password: sonarqube
+- name: Ensure the PostgreSQL service is running
+  service:
+    name: postgresql
+    state: started
+    enabled: yes
+- name: Create sonarqube user
+  become_user: postgres
+  shell:
+    #   sudo -u postgres createuser sonarqube --password=sonarqube
+    sudo -u postgres psql -c "CREATE USER sonarqube WITH PASSWORD 'sonarqube';"
+- name: Create sonarqube databse 
+  become_user: postgres
+  shell:
+   sudo -u postgres createdb --owner=sonarqube sonarqube
+- name: Grant  previllage to sonarqube
+  become_user: postgres
+  shell:
+   sudo -u postgres -c "GRANT ALL PRIVILEGES ON DATABASE sonarqube TO sonarqube;"
